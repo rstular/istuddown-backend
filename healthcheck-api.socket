@@ -1,0 +1,10 @@
+[Unit]
+Description=HealthCheck API socket
+
+[Socket]
+ListenStream=/run/healthcheck.sock
+SocketUser=www-data
+
+[Install]
+WantedBy=multi-user.target
+

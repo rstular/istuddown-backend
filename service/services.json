@@ -1,0 +1,31 @@
+{
+    "services": [
+        {
+            "name": "brightspace",
+            "display_name": "BrightSpace",
+            "display_url": "https://brightspace.tudelft.nl/",
+            "description": "A digital learning environment",
+            "check_url": "https://brightspace.tudelft.nl/",
+            "order": 1,
+            "active": 1
+        },
+        {
+            "name": "login",
+            "display_name": "Login service",
+            "display_url": "https://login.tudelft.nl/",
+            "description": "TU Delft Identity Provider",
+            "check_url": "https://login.tudelft.nl/",
+            "order": 2,
+            "active": 1
+        },
+        {
+            "name": "peer",
+            "display_name": "Peer",
+            "display_url": "https://peer.tudelft.nl/",
+            "description": "Peer review platform",
+            "check_url": "https://peer.tudelft.nl/",
+            "order": 3,
+            "active": 1
+        }
+    ]
+}

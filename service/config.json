@@ -1,0 +1,7 @@
+{
+    "db_server": "mongodb://{user}:{pwd}@{host}:{port}/{db}",
+    "collection_services": "services",
+    "collection_healthcheck": "healthchecks",
+    "check_timeout": 15,
+    "degraded_threshold": 2000
+}
