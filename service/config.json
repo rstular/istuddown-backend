@@ -3,5 +3,6 @@
     "collection_services": "services",
     "collection_healthcheck": "healthchecks",
     "check_timeout": 15,
-    "degraded_threshold": 2000
+    "degraded_threshold": 2000,
+    "min_check_interval": 60
 }

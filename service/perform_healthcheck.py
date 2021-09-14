@@ -10,10 +10,6 @@ import pymongo
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
-
-CONFIG_FILE = sys.argv[1] if len(sys.argv) > 1 else "config.json"
-
 
 class ServiceStatus(IntEnum):
     ONLINE = 0
@@ -40,84 +36,96 @@ stdout_handler.setFormatter(stdout_formatter)
 stdout_handler.setLevel(logging.DEBUG)
 hc_logger.addHandler(stdout_handler)
 
-hc_logger.info("Initializing healthcheck collector")
 
+def perform_healthcheck(config: dict) -> bool:
 
-try:
-    with open(CONFIG_FILE) as f:
-        config = json.load(f)
-except IOError as err:
-    hc_logger.critical(str(err))
-    exit(1)
+    load_dotenv()
 
-hc_logger.debug("Loaded configuration file")
+    hc_logger.info("Initializing healthcheck collector")
 
-client = pymongo.MongoClient(
-    config["db_server"].format(
-        user=os.getenv("MONGO_USER"),
-        pwd=os.getenv("MONGO_PASS"),
-        db=os.getenv("MONGO_DB"),
-        host=os.getenv("MONGO_HOST"),
-        port=os.getenv("MONGO_PORT"),
+    client = pymongo.MongoClient(
+        config["db_server"].format(
+            user=os.getenv("MONGO_USER"),
+            pwd=os.getenv("MONGO_PASS"),
+            db=os.getenv("MONGO_DB"),
+            host=os.getenv("MONGO_HOST"),
+            port=os.getenv("MONGO_PORT"),
+        )
     )
-)
-
-try:
-    client.admin.command("ping")
-except pymongo.errors.ServerSelectionTimeoutError as err:
-    hc_logger.critical(str(err))
-    exit(1)
-
-hc_logger.debug("Established connection to MongoDB server")
-
-db = client[os.getenv("MONGO_DB")]
-
-services_collection = db[config["collection_services"]]
-healthchecks_collection = db[config["collection_healthcheck"]]
-
-healthcheck_entry = {"timestamp": int(time.time()), "services": []}
-
-for item in services_collection.find().sort("order"):
-    if not item["active"]:
-        continue
-
-    hc_logger.debug("Performing healthcheck for service {}".format(item["name"]))
-
-    srv_healthcheck = {"service_id": item["_id"]}
 
     try:
-        r = requests.get(
-            item["check_url"],
-            timeout=config["check_timeout"],
-            allow_redirects=False,
-            verify=False,
-        )
-        srv_healthcheck["ping"] = round(r.elapsed.total_seconds() * 1000, 3)
-        if r.status_code >= 500:
-            srv_healthcheck["status"] = ServiceStatus.OFFLINE
-        elif srv_healthcheck["ping"] >= config["degraded_threshold"]:
-            srv_healthcheck["status"] = ServiceStatus.DEGRADED
-        else:
-            srv_healthcheck["status"] = ServiceStatus.ONLINE
+        client.admin.command("ping")
+    except pymongo.errors.ServerSelectionTimeoutError as err:
+        hc_logger.critical(str(err))
+        exit(1)
 
-    except requests.exceptions.ReadTimeout:
-        srv_healthcheck["ping"] = -1
-        srv_healthcheck["status"] = ServiceStatus.OFFLINE
-    except requests.exceptions.ConnectionError:
-        srv_healthcheck["ping"] = -1
-        srv_healthcheck["status"] = ServiceStatus.OFFLINE
-    except Exception as err:
-        srv_healthcheck["ping"] = -1
-        srv_healthcheck["status"] = ServiceStatus.UNKNOWN
-        hc_logger.error(
-            "Unknown error ({}) when checking service '{}'".format(
-                err.__class__.__name__, item["name"]
+    hc_logger.debug("Established connection to MongoDB server")
+
+    db = client[os.getenv("MONGO_DB")]
+
+    services_collection = db[config["collection_services"]]
+    healthchecks_collection = db[config["collection_healthcheck"]]
+
+    healthcheck_entry = {"timestamp": int(time.time()), "services": []}
+
+    for item in services_collection.find().sort("order"):
+        if not item["active"]:
+            continue
+
+        hc_logger.debug("Performing healthcheck for service {}".format(item["name"]))
+
+        srv_healthcheck = {"service_id": item["_id"]}
+
+        try:
+            r = requests.get(
+                item["check_url"],
+                timeout=config["check_timeout"],
+                allow_redirects=False,
+                verify=False,
             )
-        )
-        hc_logger.error(str(err))
+            srv_healthcheck["ping"] = round(r.elapsed.total_seconds() * 1000, 3)
+            if r.status_code >= 500:
+                srv_healthcheck["status"] = ServiceStatus.OFFLINE
+            elif srv_healthcheck["ping"] >= config["degraded_threshold"]:
+                srv_healthcheck["status"] = ServiceStatus.DEGRADED
+            else:
+                srv_healthcheck["status"] = ServiceStatus.ONLINE
 
-    healthcheck_entry["services"].append(srv_healthcheck)
+        except requests.exceptions.ReadTimeout:
+            srv_healthcheck["ping"] = -1
+            srv_healthcheck["status"] = ServiceStatus.OFFLINE
+        except requests.exceptions.ConnectionError:
+            srv_healthcheck["ping"] = -1
+            srv_healthcheck["status"] = ServiceStatus.OFFLINE
+        except Exception as err:
+            srv_healthcheck["ping"] = -1
+            srv_healthcheck["status"] = ServiceStatus.UNKNOWN
+            hc_logger.error(
+                "Unknown error ({}) when checking service '{}'".format(
+                    err.__class__.__name__, item["name"]
+                )
+            )
+            hc_logger.error(str(err))
 
-healthchecks_collection.insert_one(healthcheck_entry)
+        healthcheck_entry["services"].append(srv_healthcheck)
 
-hc_logger.info("Healthcheck completed")
+    healthchecks_collection.insert_one(healthcheck_entry)
+
+    hc_logger.info("Healthcheck completed")
+
+    return True
+
+
+if __name__ == "__main__":
+    hc_logger.info("Healthcheck manually started!")
+
+    CONFIG_FILE = sys.argv[1] if len(sys.argv) > 1 else "config.json"
+    try:
+        with open(CONFIG_FILE) as f:
+            config = json.load(f)
+    except IOError as err:
+        hc_logger.critical(str(err))
+        exit(1)
+
+    hc_logger.debug("Loaded configuration file")
+    perform_healthcheck(config)
