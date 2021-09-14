@@ -1,10 +1,17 @@
-from starlette.responses import JSONResponse
+import os
+import signal
+
 import database
 import settings
 from fastapi import APIRouter
-from models import HealthcheckModel, Message, ServiceHealthModel
-import os
-import signal
+from models import (
+    HealthcheckModel,
+    HealthcheckTinyModel,
+    Message,
+    ServiceHealthModel,
+    ServiceStatus,
+)
+from starlette.responses import JSONResponse
 
 router = APIRouter(prefix="/healthcheck", tags=["healthcheck"], redirect_slashes=False)
 
@@ -43,6 +50,38 @@ async def get_latest_healthcheck():
         )
         response_object["services"].append(service_obj)
 
+    return response_object
+
+
+@router.get(
+    "/tiny/",
+    name="tiny",
+    summary="Return the status of the worst-performing service",
+    response_description="Status number of the worst-performing service",
+    response_model=HealthcheckTinyModel,
+)
+async def get_tiny_healthcheck():
+    latest_healthcheck = (
+        await database.get_db()[settings.HEALTHCHECK_COLLECTION]
+        .find({}, {"_id": False})
+        .sort([("timestamp", -1)])
+        .limit(1)
+        .next()
+    )
+
+    response_object: HealthcheckTinyModel = {
+        "timestamp": latest_healthcheck["timestamp"]
+    }
+
+    worstStatus = ServiceStatus.ONLINE
+    for service in latest_healthcheck["services"]:
+        if service["status"] < 3 and service["status"] > worstStatus:
+            worstStatus = service["status"]
+
+            if worstStatus == ServiceStatus.OFFLINE:
+                break
+
+    response_object["status"] = worstStatus
     return response_object
 
 

@@ -11,6 +11,11 @@ class ServiceStatus(IntEnum):
     UNKNOWN = 3
 
 
+class HealthcheckTinyModel(BaseModel):
+    timestamp: int = Field(...)
+    status: ServiceStatus = Field(...)
+
+
 class ServiceModel(BaseModel):
     name: str = Field(...)
     display_name: str = Field(...)
@@ -24,21 +29,13 @@ class ServiceDetailedModel(ServiceModel):
 
 
 class ServiceHealthModel(ServiceModel):
-
     ping: float = Field(...)
     status: ServiceStatus = Field(...)
 
-    class Config:
-        allow_population_by_field_name = True
-
 
 class HealthcheckModel(BaseModel):
-
     timestamp: int = Field(...)
     services: List[ServiceHealthModel] = Field(...)
-
-    class Config:
-        allow_population_by_field_name = True
 
 
 class Message(BaseModel):
