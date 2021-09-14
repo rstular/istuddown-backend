@@ -86,7 +86,9 @@ for item in services_collection.find().sort("order"):
     srv_healthcheck = {"service_id": item["_id"]}
 
     try:
-        r = requests.get(item["check_url"], timeout=config["check_timeout"])
+        r = requests.get(
+            item["check_url"], timeout=config["check_timeout"], allow_redirects=False
+        )
         srv_healthcheck["ping"] = round(r.elapsed.total_seconds() * 1000, 3)
         if r.status_code >= 500:
             srv_healthcheck["status"] = ServiceStatus.OFFLINE
