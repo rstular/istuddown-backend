@@ -14,3 +14,5 @@ HEALTHCHECK_COLLECTION = config(
     "HEALTHCHECK_COLLECTION", cast=str, default="healthchecks"
 )
 SERVICES_COLLECTION = config("SERVICE_COLLECTION", cast=str, default="services")
+
+IS_DEBUG = config("HCDEBUG", cast=int, default=0)

@@ -28,13 +28,11 @@ MONGO_HOST = os.getenv("MONGO_HOST")
 MONGO_PORT = os.getenv("MONGO_PORT")
 
 # Connect to MongoDB server
-client = pymongo.MongoClient(config["db_server"].format(
-    user = MONGO_USER,
-    pwd = MONGO_PASS,
-    host = MONGO_HOST,
-    port = MONGO_PORT,
-    db = MONGO_DB
-))
+client = pymongo.MongoClient(
+    config["db_server"].format(
+        user=MONGO_USER, pwd=MONGO_PASS, host=MONGO_HOST, port=MONGO_PORT, db=MONGO_DB
+    )
+)
 
 # Connect to MongoDB database
 db = client[MONGO_DB]

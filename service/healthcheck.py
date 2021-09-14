@@ -58,7 +58,7 @@ client = pymongo.MongoClient(
         pwd=os.getenv("MONGO_PASS"),
         db=os.getenv("MONGO_DB"),
         host=os.getenv("MONGO_HOST"),
-        port=os.getenv("MONGO_PORT")
+        port=os.getenv("MONGO_PORT"),
     )
 )
 
