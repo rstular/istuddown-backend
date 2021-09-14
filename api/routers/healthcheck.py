@@ -6,10 +6,12 @@ import settings
 from fastapi import APIRouter
 from models import (
     HealthcheckModel,
+    HealthcheckShortModel,
     HealthcheckTinyModel,
     Message,
     ServiceHealthModel,
     ServiceHealthTimestampModel,
+    ServiceShortHealthModel,
     ServiceStatus,
 )
 from starlette.responses import JSONResponse
@@ -47,6 +49,41 @@ async def get_latest_healthcheck():
         )
 
         service_obj = ServiceHealthModel(
+            **service_info, ping=service["ping"], status=service["status"]
+        )
+        response_object["services"].append(service_obj)
+
+    return response_object
+
+
+@router.get(
+    "/latest/short/",
+    name="short",
+    summary="Return latest healthcheck result in shorter form",
+    response_description="Reults of the last healthcheck",
+    response_model=HealthcheckShortModel,
+)
+async def get_short_healthcheck():
+    latest_healthcheck = (
+        await database.get_db()[settings.HEALTHCHECK_COLLECTION]
+        .find({}, {"_id": False})
+        .sort([("timestamp", -1)])
+        .limit(1)
+        .next()
+    )
+    response_object: HealthcheckShortModel = {
+        "timestamp": latest_healthcheck["timestamp"],
+        "services": [],
+    }
+
+    for service in latest_healthcheck["services"]:
+
+        service_info = await database.get_db()[settings.SERVICES_COLLECTION].find_one(
+            {"_id": service["service_id"]},
+            {"name": True, "display_name": True, "display_url": True},
+        )
+
+        service_obj = ServiceShortHealthModel(
             **service_info, ping=service["ping"], status=service["status"]
         )
         response_object["services"].append(service_obj)

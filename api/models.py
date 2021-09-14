@@ -16,10 +16,13 @@ class HealthcheckTinyModel(BaseModel):
     status: ServiceStatus = Field(...)
 
 
-class ServiceModel(BaseModel):
+class ServiceShortModel(BaseModel):
     name: str = Field(...)
     display_name: str = Field(...)
     display_url: AnyHttpUrl = Field(...)
+
+
+class ServiceModel(ServiceShortModel):
     description: str = Field(...)
 
 
@@ -28,9 +31,19 @@ class ServiceDetailedModel(ServiceModel):
     check_url: AnyHttpUrl = Field(...)
 
 
+class ServiceShortHealthModel(ServiceShortModel):
+    ping: float = Field(...)
+    status: ServiceStatus = Field(...)
+
+
 class ServiceHealthModel(ServiceModel):
     ping: float = Field(...)
     status: ServiceStatus = Field(...)
+
+
+class HealthcheckShortModel(BaseModel):
+    timestamp: int = Field(...)
+    services: List[ServiceShortHealthModel] = Field(...)
 
 
 class ServiceHealthTimestampModel(ServiceHealthModel):
