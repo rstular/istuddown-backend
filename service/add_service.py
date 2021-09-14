@@ -62,4 +62,4 @@ if decision[0] != "y" and decision[0] != "Y":
 
 ins_res = services_collection.insert_one(service_obj)
 
-print("[+] Inserted recort {}!".format(str(ins_res.inserted_id)))
+print("[+] Inserted record ID {}".format(str(ins_res.inserted_id)))
