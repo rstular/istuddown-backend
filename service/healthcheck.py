@@ -87,7 +87,10 @@ for item in services_collection.find().sort("order"):
 
     try:
         r = requests.get(
-            item["check_url"], timeout=config["check_timeout"], allow_redirects=False
+            item["check_url"],
+            timeout=config["check_timeout"],
+            allow_redirects=False,
+            verify=False,
         )
         srv_healthcheck["ping"] = round(r.elapsed.total_seconds() * 1000, 3)
         if r.status_code >= 500:
