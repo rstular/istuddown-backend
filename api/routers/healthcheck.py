@@ -106,3 +106,40 @@ async def perform_healthcheck():
     return JSONResponse(
         content={"message": "Request for another healthcheck was sent."}
     )
+
+
+@router.get(
+    "/latest/{name}",
+    name="latest_service",
+    summary="Get latest healthcheck result for a specific service",
+    response_model=ServiceHealthModel,
+    response_description="Latest healthcheck result for the specified service",
+    responses={404: {"model": Message}},
+)
+async def get_latest_service(name):
+
+    service_info = await database.get_db()[settings.SERVICES_COLLECTION].find_one(
+        {"name": name}, {"active": False, "check_url": False}
+    )
+    if service_info is None:
+        return JSONResponse(status_code=404, content={"message": "Service not found"})
+
+    latest_healthcheck = (
+        await database.get_db()[settings.HEALTHCHECK_COLLECTION]
+        .find({}, {"_id": False})
+        .sort([("timestamp", -1)])
+        .limit(1)
+        .next()
+    )
+    for service in latest_healthcheck["services"]:
+        if service["service_id"] == service_info["_id"]:
+            return ServiceHealthModel(
+                ping=service["ping"], status=service["status"], **service_info
+            )
+
+    return JSONResponse(
+        status_code=404,
+        content={
+            "message": "Healthcheck result not found - the service may be inactive"
+        },
+    )
