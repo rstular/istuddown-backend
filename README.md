@@ -2,7 +2,7 @@
 
 ## API
 
-Api requires a `.env` file to run properly. The file should have the following structure:
+API requires a `.env` file to run properly. The file should have the following structure:
 
 ```bash
 MONGO_USER="user"
@@ -12,6 +12,7 @@ MONGO_HOST="localhost"
 MONGO_PORT="27017"
 HEALTHCHECK_COLLECTION="healthchecks"
 SERVICE_COLLECTION="services"
+HCDEBUG="0"
 ```
 
 ## Service
