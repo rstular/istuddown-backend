@@ -18,15 +18,13 @@ pidfile = "/run/hcdaemon/hcdaemon.pid"
 hc_logger = logging.getLogger("HealthCheck daemon")
 hc_logger.setLevel(logging.DEBUG)
 
-syslog_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
-syslog_handler.setFormatter(syslog_formatter)
-syslog_handler.setLevel(logging.INFO)
-hc_logger.addHandler(syslog_handler)
+# syslog_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+# syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
+# syslog_handler.setFormatter(syslog_formatter)
+# syslog_handler.setLevel(logging.INFO)
+# hc_logger.addHandler(syslog_handler)
 
-stdout_formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+stdout_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setFormatter(stdout_formatter)
 stdout_handler.setLevel(logging.DEBUG)
@@ -80,7 +78,7 @@ signal.signal(signal.SIGUSR1, handler)
 
 
 hc_logger.debug("Scheduling tasks")
-schedule.every(5).minutes.do(perform_healthcheck)
+schedule.every(5).minutes.do(perform_healthcheck, config)
 
 hc_logger.info("Running main loop")
 try:
