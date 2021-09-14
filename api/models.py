@@ -33,6 +33,10 @@ class ServiceHealthModel(ServiceModel):
     status: ServiceStatus = Field(...)
 
 
+class ServiceHealthTimestampModel(ServiceHealthModel):
+    timestamp: int = Field(...)
+
+
 class HealthcheckModel(BaseModel):
     timestamp: int = Field(...)
     services: List[ServiceHealthModel] = Field(...)

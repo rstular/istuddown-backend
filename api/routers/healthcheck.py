@@ -9,6 +9,7 @@ from models import (
     HealthcheckTinyModel,
     Message,
     ServiceHealthModel,
+    ServiceHealthTimestampModel,
     ServiceStatus,
 )
 from starlette.responses import JSONResponse
@@ -54,9 +55,9 @@ async def get_latest_healthcheck():
 
 
 @router.get(
-    "/tiny/",
+    "/latest/tiny/",
     name="tiny",
-    summary="Return the status of the worst-performing service",
+    summary="Return the latest status of the worst-performing service",
     response_description="Status number of the worst-performing service",
     response_model=HealthcheckTinyModel,
 )
@@ -85,34 +86,11 @@ async def get_tiny_healthcheck():
     return response_object
 
 
-@router.post(
-    "/",
-    name="perform",
-    summary="Request another healthcheck",
-    response_model=Message,
-    response_description="Whether the request for another healthcheck was sent",
-    responses={503: {"model": Message}},
-)
-async def perform_healthcheck():
-    try:
-        with open(settings.DAEMON_PIDFILE) as f:
-            pid = int(f.read())
-        os.kill(pid, signal.SIGUSR1)
-    except:
-        return JSONResponse(
-            status_code=503, content={"message": "Daemon is unavailable at the moment"}
-        )
-
-    return JSONResponse(
-        content={"message": "Request for another healthcheck was sent."}
-    )
-
-
 @router.get(
     "/latest/{name}",
     name="latest_service",
     summary="Get latest healthcheck result for a specific service",
-    response_model=ServiceHealthModel,
+    response_model=ServiceHealthTimestampModel,
     response_description="Latest healthcheck result for the specified service",
     responses={404: {"model": Message}},
 )
@@ -133,8 +111,11 @@ async def get_latest_service(name):
     )
     for service in latest_healthcheck["services"]:
         if service["service_id"] == service_info["_id"]:
-            return ServiceHealthModel(
-                ping=service["ping"], status=service["status"], **service_info
+            return ServiceHealthTimestampModel(
+                timestamp=latest_healthcheck["timestamp"],
+                ping=service["ping"],
+                status=service["status"],
+                **service_info
             )
 
     return JSONResponse(
@@ -142,4 +123,27 @@ async def get_latest_service(name):
         content={
             "message": "Healthcheck result not found - the service may be inactive"
         },
+    )
+
+
+@router.post(
+    "/",
+    name="perform",
+    summary="Request another healthcheck",
+    response_model=Message,
+    response_description="Whether the request for another healthcheck was sent",
+    responses={503: {"model": Message}},
+)
+async def perform_healthcheck():
+    try:
+        with open(settings.DAEMON_PIDFILE) as f:
+            pid = int(f.read())
+        os.kill(pid, signal.SIGUSR1)
+    except:
+        return JSONResponse(
+            status_code=503, content={"message": "Daemon is unavailable at the moment"}
+        )
+
+    return JSONResponse(
+        content={"message": "Request for another healthcheck was sent."}
     )
