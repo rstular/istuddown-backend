@@ -2,6 +2,8 @@ from starlette.config import Config
 
 config = Config(".env")
 
+DAEMON_PIDFILE = "/run/hcdaemon/hcdaemon.pid"
+
 MONGO_USER = config("MONGO_USER", cast=str, default="admin")
 MONGO_PASS = config("MONGO_PASS", cast=str, default="admin")
 MONGO_DB = config("MONGO_DB", cast=str, default="istudelftdown")
