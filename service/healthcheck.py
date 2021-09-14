@@ -101,10 +101,13 @@ for item in services_collection.find().sort("order"):
             srv_healthcheck["status"] = ServiceStatus.ONLINE
 
     except requests.exceptions.ReadTimeout:
+        srv_healthcheck["ping"] = -1
         srv_healthcheck["status"] = ServiceStatus.OFFLINE
     except requests.exceptions.ConnectionError:
+        srv_healthcheck["ping"] = -1
         srv_healthcheck["status"] = ServiceStatus.OFFLINE
     except Exception as err:
+        srv_healthcheck["ping"] = -1
         srv_healthcheck["status"] = ServiceStatus.UNKNOWN
         hc_logger.error(
             "Unknown error ({}) when checking service '{}'".format(
