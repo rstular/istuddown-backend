@@ -5,8 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-PIDFile=hcdaemon.pid
+User=hcusr
 DynamicUser=yes
+RuntimeDirectory=hcdaemon
 WorkingDirectory=/srv/services/healthcheck/service
 ExecStart=/srv/services/healthcheck/.venv/bin/python /srv/services/healthcheck/service/healthcheck_daemon.py /srv/services/healthcheck/service/config.json
 ExecStop=kill -s SIGUSR1 "$MAINPID"

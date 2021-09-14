@@ -11,8 +11,8 @@ import schedule
 from helpers import time_since_last_healthcheck
 from perform_healthcheck import perform_healthcheck
 
-# pid = str(os.getpid())
-# pidfile = "/tmp/hcdaemon.pid"
+pid = str(os.getpid())
+pidfile = "/run/hcdaemon/hcdaemon.pid"
 
 
 hc_logger = logging.getLogger("HealthCheck daemon")
@@ -42,22 +42,22 @@ except IOError as err:
     exit(1)
 
 # Check if PID file exists and the process owning it is alive
-# if os.path.isfile(pidfile):
-#     with open(pidfile) as f:
-#         pidfile_content = int(f.read())
-#     try:
-#         os.kill(pidfile_content, 0)
-#     except OSError:
-#         os.remove(pidfile)
-#         hc_logger.warning("PID file belonging to a dead process exists, deleting it")
-#     else:
-#         hc_logger.error("PID file belonging to an active process exists, aborting")
-#         exit()
+if os.path.isfile(pidfile):
+    with open(pidfile) as f:
+        pidfile_content = int(f.read())
+    try:
+        os.kill(pidfile_content, 0)
+    except OSError:
+        os.unlink(pidfile)
+        hc_logger.warning("PID file belonging to a dead process exists, deleting it")
+    else:
+        hc_logger.error("PID file belonging to an active process exists, aborting")
+        exit()
 
 
-# hc_logger.info("Creating PID file")
-# with open(pidfile, "w") as f:
-#     f.write(pid)
+hc_logger.info("Creating PID file")
+with open(pidfile, "w") as f:
+    f.write(pid)
 
 
 def handler(signum, frame):
@@ -71,7 +71,7 @@ def handler(signum, frame):
             hc_logger.info("Healthcheck triggered via SIGUSR1, but it's to soon")
     elif signum == signal.SIGTERM:
         hc_logger.info("SIGTERM received, quitting")
-        # os.unlink(pidfile)  # Delete PID file
+        os.unlink(pidfile)  # Delete PID file
         exit(0)
 
 
@@ -89,4 +89,4 @@ try:
         time.sleep(5)
 except KeyboardInterrupt:
     hc_logger.info("Keyboard interrupt received, quitting")
-    # os.unlink(pidfile)  # Delete PID file
+    os.unlink(pidfile)  # Delete PID file
