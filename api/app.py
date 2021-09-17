@@ -3,11 +3,10 @@ from typing import List
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 
 import database
 import settings
-from routers import compatibility, healthcheck, services
+from routers import healthcheck, services
 
 if settings.IS_DEBUG:
     app = FastAPI(title="Is TU Delft down? API")
@@ -24,7 +23,6 @@ app.add_event_handler("shutdown", database.close_db)
 
 app.include_router(healthcheck.router)
 app.include_router(services.router)
-app.include_router(compatibility.router)
 
 
 if __name__ == "__main__":
