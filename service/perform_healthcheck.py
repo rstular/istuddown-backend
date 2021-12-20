@@ -68,6 +68,11 @@ def perform_healthcheck(config: dict) -> bool:
 
     healthcheck_entry = {"timestamp": int(time.time()), "services": []}
 
+    request_headers = {
+        "User-Agent": config["operator_info"]["ua"],
+        "From": config["operator_info"]["from"]
+    }
+
     for item in services_collection.find().sort("order"):
         if not item["active"]:
             continue

@@ -4,5 +4,9 @@
     "collection_healthcheck": "healthchecks",
     "check_timeout": 15,
     "degraded_threshold": 2000,
-    "min_check_interval": 60
+    "min_check_interval": 60,
+    "operator_info": {
+        "ua": "IsTuDelftDownCrawler 1.0 (https://istudelftdown.com/)",
+        "from": "r.stular@student.tudelft.nl"
+    }
 }
