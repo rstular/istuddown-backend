@@ -16,7 +16,7 @@ pidfile = "/run/hcdaemon/hcdaemon.pid"
 
 
 hc_logger = logging.getLogger("HealthCheck daemon")
-hc_logger.setLevel(logging.DEBUG)
+hc_logger.setLevel(logging.INFO)
 
 # syslog_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 # syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
@@ -27,7 +27,7 @@ hc_logger.setLevel(logging.DEBUG)
 stdout_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setFormatter(stdout_formatter)
-stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setLevel(logging.INFO)
 hc_logger.addHandler(stdout_handler)
 
 hc_logger.info("Starting healthcheck daemon")
@@ -53,7 +53,7 @@ if os.path.isfile(pidfile):
         exit()
 
 
-hc_logger.info("Creating PID file")
+hc_logger.debug("Creating PID file")
 with open(pidfile, "w") as f:
     f.write(pid)
 
@@ -68,7 +68,7 @@ def handler(signum, frame):
         else:
             hc_logger.info("Healthcheck triggered via SIGUSR1, but it's to soon")
     elif signum == signal.SIGTERM:
-        hc_logger.info("SIGTERM received, quitting")
+        hc_logger.warn("SIGTERM received, quitting")
         os.unlink(pidfile)  # Delete PID file
         exit(0)
 
@@ -86,5 +86,5 @@ try:
         schedule.run_pending()
         time.sleep(5)
 except KeyboardInterrupt:
-    hc_logger.info("Keyboard interrupt received, quitting")
+    hc_logger.warn("Keyboard interrupt received, quitting")
     os.unlink(pidfile)  # Delete PID file

@@ -19,7 +19,7 @@ class ServiceStatus(IntEnum):
 
 
 hc_logger = logging.getLogger("HealthCheck")
-hc_logger.setLevel(logging.DEBUG)
+hc_logger.setLevel(logging.INFO)
 
 
 syslog_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
@@ -33,7 +33,7 @@ stdout_formatter = logging.Formatter(
 )
 stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setFormatter(stdout_formatter)
-stdout_handler.setLevel(logging.DEBUG)
+stdout_handler.setLevel(logging.INFO)
 hc_logger.addHandler(stdout_handler)
 
 
