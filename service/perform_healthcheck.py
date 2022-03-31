@@ -25,7 +25,7 @@ hc_logger.setLevel(logging.INFO)
 syslog_formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
 syslog_handler.setFormatter(syslog_formatter)
-syslog_handler.setLevel(logging.INFO)
+syslog_handler.setLevel(logging.DEBUG)
 hc_logger.addHandler(syslog_handler)
 
 stdout_formatter = logging.Formatter(
@@ -81,36 +81,50 @@ def perform_healthcheck(config: dict) -> bool:
 
         srv_healthcheck = {"service_id": item["_id"]}
 
-        try:
-            r = requests.get(
-                item["check_url"],
-                timeout=config["check_timeout"],
-                allow_redirects=False,
-                verify=False,
-            )
-            srv_healthcheck["ping"] = round(r.elapsed.total_seconds() * 1000, 3)
-            if r.status_code >= 500:
-                srv_healthcheck["status"] = ServiceStatus.OFFLINE
-            elif srv_healthcheck["ping"] >= config["degraded_threshold"]:
-                srv_healthcheck["status"] = ServiceStatus.DEGRADED
-            else:
-                srv_healthcheck["status"] = ServiceStatus.ONLINE
+        pings = []
+        statuses = []
 
-        except requests.exceptions.ReadTimeout:
-            srv_healthcheck["ping"] = -1
-            srv_healthcheck["status"] = ServiceStatus.OFFLINE
-        except requests.exceptions.ConnectionError:
-            srv_healthcheck["ping"] = -1
-            srv_healthcheck["status"] = ServiceStatus.OFFLINE
-        except Exception as err:
-            srv_healthcheck["ping"] = -1
-            srv_healthcheck["status"] = ServiceStatus.UNKNOWN
-            hc_logger.error(
-                "Unknown error ({}) when checking service '{}'".format(
-                    err.__class__.__name__, item["name"]
+        for i in range(3):
+
+            try:
+                r = requests.get(
+                    item["check_url"],
+                    timeout=config["check_timeout"],
+                    allow_redirects=False,
+                    verify=False,
+                    headers=request_headers,
                 )
-            )
-            hc_logger.error(str(err))
+                pings.append(r.elapsed.total_seconds())
+                statuses.append(r.status_code)
+
+            except requests.exceptions.ReadTimeout:
+                pass
+            except requests.exceptions.ConnectionError:
+                pass
+            except Exception as err:
+                hc_logger.error(
+                    "Unknown error ({}) when checking service '{}'".format(
+                        err.__class__.__name__, item["name"]
+                    )
+                )
+                hc_logger.error(str(err))
+
+            time.sleep(0.2)
+
+        if len(pings) == 0:
+            srv_healthcheck["ping"] = -1
+            srv_healthcheck["status"] = ServiceStatus.OFFLINE
+        else:
+            srv_healthcheck["ping"] = round(sum(pings)/len(pings) * 1000, 3)
+
+        if max(statuses) >= 500 and min(statuses) < 500:
+            srv_healthcheck["status"] = ServiceStatus.DEGRADED
+        elif max(statuses) >= 500:
+            srv_healthcheck["status"] = ServiceStatus.OFFLINE
+        elif srv_healthcheck["ping"] >= config["degraded_threshold"]:
+            srv_healthcheck["status"] = ServiceStatus.DEGRADED
+        else:
+            srv_healthcheck["status"] = ServiceStatus.ONLINE
 
         healthcheck_entry["services"].append(srv_healthcheck)
 
